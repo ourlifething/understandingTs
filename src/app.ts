@@ -9,20 +9,16 @@
  * autobind decorator
  * デコレーターは３つの引数をうけとる（ターゲット：any、プロパティ名（メソッド名）: string, プロパティでスクリプター: PropertyDescriptor)
  */
-function autobind(
-    _: any,
-    _2: string,
-    descriptor: PropertyDescriptor
-) {
-    const originalMethod = descriptor.value;
-    const adjDescriptor: PropertyDescriptor = {
-        configurable: true,
-        get() {
-            const boundFn = originalMethod.bind(this);
-            return boundFn;
-        }
-    }
-    return adjDescriptor;
+function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
+  const originalMethod = descriptor.value;
+  const adjDescriptor: PropertyDescriptor = {
+    configurable: true,
+    get() {
+      const boundFn = originalMethod.bind(this);
+      return boundFn;
+    },
+  };
+  return adjDescriptor;
 }
 
 // formを表示しユーザーの入力を受け取るためのクラス
@@ -69,10 +65,42 @@ class ProjectImput {
     this.configure();
     this.attach();
   }
+
+  // 簡単なバリデーションを実装し入力値を返す
+  private gatherUseuInput(): [string, string, number] | void{
+    const enteredTitle = this.titleInputElement.value;
+    const enteredDescription = this.descriptionInputElement.value;
+    const enteredManday = this.mandayInputElement.value;
+    if (
+        //trim()最初と最後の空白を除去する
+      enteredTitle.trim().length === 0 ||
+      enteredDescription.trim().length === 0 ||
+      enteredManday.trim().length === 0
+    ) {
+        alert('入力値が正しくありません。再度お試しください。')
+        return;
+    } else {
+        return[enteredTitle, enteredDescription, +enteredManday];
+    }
+  }
+ 
+  // 入力した文字をクリア（消す）するメソッド、submitHandlerで呼び出す。
+  private clearInputs() {
+    this.titleInputElement.value = '';
+    this.descriptionInputElement.value = '';
+    this.mandayInputElement.value = '';
+  }
   // イベントリスナーのレシーバー関数
   @autobind // tsconfigでデコレーターの設定をONにしなくてはエラーとなる
   private submitHandler(event: Event) {
     event.preventDefault();
+    const userInput = this.gatherUseuInput();
+    // tupleかどうかのチェックタプルは配列のため以下
+    if (Array.isArray(userInput)) {
+        const [title, desc, manday] = userInput;
+        console.log(title, desc, manday);
+        this.clearInputs();
+    }
     console.log(this.titleInputElement.value);
   }
   // フォームにイベントリスナーを設定する
