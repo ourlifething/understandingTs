@@ -5,6 +5,49 @@
  * 3.新しいリストを作成して画面に表示する
  */
 
+// validation(バリデーション)
+interface Validatable {
+  value: string | number;
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+}
+
+function validate(validatableInput: Validatable) {
+  let isValid = true;
+  if (validatableInput.required) {
+    isValid = isValid && validatableInput.value.toString().trim().length !== 0;
+  }
+  if (
+    validatableInput.minLength != null &&
+    typeof validatableInput.value === "string"
+  ) {
+    isValid =
+      isValid && validatableInput.value.length >= validatableInput.minLength;
+  }
+  if (
+    validatableInput.maxLength != null &&
+    typeof validatableInput.value === "string"
+  ) {
+    isValid =
+      isValid && validatableInput.value.length <= validatableInput.maxLength;
+  }
+  if (
+    validatableInput.min != null &&
+    typeof validatableInput.value === "number"
+  ) {
+    isValid = isValid && validatableInput.value >= validatableInput.min;
+  }
+  if (
+    validatableInput.max != null &&
+    typeof validatableInput.value === "number"
+  ) {
+    isValid = isValid && validatableInput.value <= validatableInput.max;
+  }
+  return isValid;
+}
 /**
  * autobind decorator
  * デコレーターは３つの引数をうけとる（ターゲット：any、プロパティ名（メソッド名）: string, プロパティでスクリプター: PropertyDescriptor)
@@ -67,41 +110,60 @@ class ProjectImput {
   }
 
   // 簡単なバリデーションを実装し入力値を返す
-  private gatherUseuInput(): [string, string, number] | void{
+  private gatherUseuInput(): [string, string, number] | void {
     const enteredTitle = this.titleInputElement.value;
     const enteredDescription = this.descriptionInputElement.value;
     const enteredManday = this.mandayInputElement.value;
+
+    const titleValidatable: Validatable = {
+      value: enteredTitle,
+      required: true,
+    };
+    const descriptionValidatable: Validatable = {
+      value: enteredDescription,
+      required: true,
+      minLength: 5,
+    };
+    const mandayValidatable: Validatable = {
+      value: +enteredManday,
+      required: true,
+      min: 1,
+      max: 1000,
+    };
     if (
-        //trim()最初と最後の空白を除去する
-      enteredTitle.trim().length === 0 ||
-      enteredDescription.trim().length === 0 ||
-      enteredManday.trim().length === 0
+      !validate(titleValidatable) ||
+      !validate(descriptionValidatable) ||
+      !validate(mandayValidatable)
+      //   trim()最初と最後の空白を除去する
+      //   enteredTitle.trim().length === 0 ||
+      //   enteredDescription.trim().length === 0 ||
+      //   enteredManday.trim().length === 0
     ) {
-        alert('入力値が正しくありません。再度お試しください。')
+        alert("入力値が正しくありません。再度お試しください。");
         return;
     } else {
-        return[enteredTitle, enteredDescription, +enteredManday];
+        return [enteredTitle, enteredDescription, +enteredManday];
     }
   }
- 
+
   // 入力した文字をクリア（消す）するメソッド、submitHandlerで呼び出す。
   private clearInputs() {
-    this.titleInputElement.value = '';
-    this.descriptionInputElement.value = '';
-    this.mandayInputElement.value = '';
+    this.titleInputElement.value = "";
+    this.descriptionInputElement.value = "";
+    this.mandayInputElement.value = "";
   }
   // イベントリスナーのレシーバー関数
   @autobind // tsconfigでデコレーターの設定をONにしなくてはエラーとなる
   private submitHandler(event: Event) {
     event.preventDefault();
     const userInput = this.gatherUseuInput();
-    // tupleかどうかのチェックタプルは配列のため以下
+    // tupleかどうかのチェックタプルは配列のため
     if (Array.isArray(userInput)) {
-        const [title, desc, manday] = userInput;
-        console.log(title, desc, manday);
-        this.clearInputs();
+      const [title, desc, manday] = userInput;
+      console.log(title, desc, manday);
+      this.clearInputs();
     }
-    console.log(this.titleInputElement.value);
+    // console.log(this.titleInputElement.value);
   }
   // フォームにイベントリスナーを設定する
   private configure() {
