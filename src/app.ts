@@ -63,9 +63,50 @@ function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
   };
   return adjDescriptor;
 }
+// projectList Class
+// プロジェクトのリストをHTMLに渡して表示するクラス
+class ProjectList {
+  templateElement: HTMLTemplateElement;
+  hostElement: HTMLDivElement;
+  element: HTMLElement;
+
+  constructor(private type: "active" | "finished") {
+    // テンプレートエレメントへの参照
+    this.templateElement = document.getElementById(
+      "project-list"
+    )! as HTMLTemplateElement;
+    // テンプレートを表示する親要素への参照..getElementByIdはどのような型を取得するかわからないためasで型キャストしている。
+    this.hostElement = document.getElementById("app")! as HTMLDivElement;
+
+    // 画面表示：テンプレートをimportNodeとして取得
+    const importedNode = document.importNode(
+      this.templateElement.content,
+      true // 下の階層も含めてインポートする
+    );
+    //フォーム、 テンプレートの最初の子要素_importedNodeから具体的なHTMLの要素を取得する必要があるためプロパティを追加。
+    this.element = importedNode.firstElementChild as HTMLElement;
+    this.element.id = `${this.type}-projects`;
+    this.attach();
+    this.renderContent();
+  }
+
+  private renderContent() {
+    const listId = `${this.type}-projects-list`;
+    this.element.querySelector("ul")!.id = listId;
+    this.element.querySelector("h2")!.textContent =
+      this.type === "active" ? "実行中プロジェクト" : "完了プロジェクト";
+  }
+
+  private attach() {
+    this.hostElement.insertAdjacentElement("beforeend", this.element);
+  }
+}
+
+// リストの中のプロジェクトを表示するクラス
 
 // formを表示しユーザーの入力を受け取るためのクラス
 //projectInput Class
+// フォームの表示を入力値の取得を行うクラス
 class ProjectImput {
   templateElement: HTMLTemplateElement;
   hostElement: HTMLDivElement;
@@ -139,10 +180,10 @@ class ProjectImput {
       //   enteredDescription.trim().length === 0 ||
       //   enteredManday.trim().length === 0
     ) {
-        alert("入力値が正しくありません。再度お試しください。");
-        return;
+      alert("入力値が正しくありません。再度お試しください。");
+      return;
     } else {
-        return [enteredTitle, enteredDescription, +enteredManday];
+      return [enteredTitle, enteredDescription, +enteredManday];
     }
   }
 
@@ -180,3 +221,5 @@ class ProjectImput {
 }
 // インスタンスを作成した時にインスタンスに属するフォームを画面に表示
 const prjInput = new ProjectImput();
+const activePrjList = new ProjectList('active');
+const finishedPrjList = new ProjectList('finished');
