@@ -4,6 +4,62 @@
  * 2.ユーザーの入力を取得してバリデーションチェック
  * 3.新しいリストを作成して画面に表示する
  */
+// project type
+enum ProjectStatus {
+  Active,
+  Finished,
+}
+
+class Project {
+  constructor(
+    public id: string,
+    public title: string,
+    public description: string,
+    public manday: number,
+    public status: ProjectStatus
+  ) {}
+}
+
+// 状態管理を行うクラス
+// Project State Management
+type Listener = (items: Project[]) => void;
+
+class ProjectState {
+  private listeners: Listener[] = [];
+  private projects: Project[] = [];
+  private static instance: ProjectState;
+
+  // シングルトンであることを保証できる（必ずいつでも一つのインスタンスしか存在しないということ。）
+  private constructor() {}
+
+  static getInstance() {
+    if (this.instance) {
+      return this.instance;
+    }
+    this.instance = new ProjectState();
+    return this.instance;
+  }
+  // listener関数をlisteners配列に加える関数
+  addListener(listenerFn: Listener) {
+    this.listeners.push(listenerFn);
+  }
+
+  addProject(title: string, description: string, manday: number) {
+    const newProject = new Project(
+      Math.random().toString(),
+      title,
+      description,
+      manday,
+      ProjectStatus.Active
+    );
+    this.projects.push(newProject);
+    for (const listenerFn of this.listeners) {
+      listenerFn(this.projects.slice());
+    }
+  }
+}
+
+const projectState = ProjectState.getInstance();
 
 // validation(バリデーション)
 interface Validatable {
@@ -69,6 +125,7 @@ class ProjectList {
   templateElement: HTMLTemplateElement;
   hostElement: HTMLDivElement;
   element: HTMLElement;
+  assignedProjects: Project[];
 
   constructor(private type: "active" | "finished") {
     // テンプレートエレメントへの参照
@@ -77,6 +134,7 @@ class ProjectList {
     )! as HTMLTemplateElement;
     // テンプレートを表示する親要素への参照..getElementByIdはどのような型を取得するかわからないためasで型キャストしている。
     this.hostElement = document.getElementById("app")! as HTMLDivElement;
+    this.assignedProjects = [];
 
     // 画面表示：テンプレートをimportNodeとして取得
     const importedNode = document.importNode(
@@ -86,8 +144,24 @@ class ProjectList {
     //フォーム、 テンプレートの最初の子要素_importedNodeから具体的なHTMLの要素を取得する必要があるためプロパティを追加。
     this.element = importedNode.firstElementChild as HTMLElement;
     this.element.id = `${this.type}-projects`;
+
+    projectState.addListener((projects: Project[]) => {
+      this.assignedProjects = projects;
+      this.renderProjects();
+    });
     this.attach();
     this.renderContent();
+  }
+
+  private renderProjects() {
+    const listEl = document.getElementById(
+      `${this.type}-projects-list`
+    )! as HTMLUListElement;
+    for (const prjItem of this.assignedProjects) {
+      const listItem = document.createElement("li");
+      listItem.textContent = prjItem.title;
+      listEl.appendChild(listItem);
+    }
   }
 
   private renderContent() {
@@ -201,6 +275,7 @@ class ProjectImput {
     // tupleかどうかのチェックタプルは配列のため
     if (Array.isArray(userInput)) {
       const [title, desc, manday] = userInput;
+      projectState.addProject(title, desc, manday);
       console.log(title, desc, manday);
       this.clearInputs();
     }
@@ -221,5 +296,5 @@ class ProjectImput {
 }
 // インスタンスを作成した時にインスタンスに属するフォームを画面に表示
 const prjInput = new ProjectImput();
-const activePrjList = new ProjectList('active');
-const finishedPrjList = new ProjectList('finished');
+const activePrjList = new ProjectList("active");
+const finishedPrjList = new ProjectList("finished");
